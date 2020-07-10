@@ -1,0 +1,2 @@
+# setupPrinter
+For rx30
