@@ -1,2 +1,2 @@
 # setupPrinter
-For rx30
+For rlinux printer setups
