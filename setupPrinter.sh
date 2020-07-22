@@ -1,7 +1,7 @@
 #!/bin/bash
 # ram
 # rogue7.ram@gmail.com
-# ver=0.4
+# ver=0.5
 
 # jul 5, 2020 / 20:15
 
@@ -22,24 +22,27 @@
 # made changes to nmap scan, it now outputs in a more useful format
 
 # jul 19, 2020 / 13:52
-# added option to find a usb printer connexted to the server
+# added option to find a usb printer connected to the server
 # not operational as yet.
 
+# jul 20, 2020 / 22:06
+# got usb printer connected to the server working
+# thank you Darrell Streit for the printer
 
+
+
+#################
+### variables ###
+#################
 CUPS=`service cups restart`
 CUPSBKUP=`cp /etc/cups/printers.conf{,.setup}`
 CUPSREVERT=`cp /etc/cups/printers.conf.setup /etc/cups/printers.conf`
 #SHOWIP=`ifconfig | grep wlp2s0 -4 | grep inet | awk 'NR==1{print $2}'`
 SHOWIP=`ifconfig | grep 'eth0\|em1' -4 | grep inet | awk 'NR==1{print $2}'`
-
-
-#CHKUSB=`dmesg | grep -m 1 Bidirectional |  awk '{print $5}' | sed 's/://g' | sed 's/usb//g'`
-#DMESGBU=`cat dmesg > /tmp/dmesg-`date +%d%m%Y`.log`
-DMESGBU=`cat dmesg > /tmp/dmesg.log`
-#CHKUSB=`dmesg | grep -m 1 sdb | awk '{print $5}' | sed 's/://g' | sed 's/usb//g'`
+CHKUSB=`dmesg | grep -m 1 Bidirectional | awk '{print $5}' | sed 's/://g' | sed 's/usb//g'`
 DMESGCLR=`dmesg -C`
-CHKUSB=`dmesg | grep -m 1 sdb`
-
+PRNTCONF=/etc/cups/printers.conf
+MSGDEL=`cat $PRNTCONF | grep Stopped -A1 | grep -v StateMessage $PRINTCONF >> $PRNTCONF.1 && yes | mv $PRNTCONF.1 $PRNTCONF | cat $PRNTCONF | sed 's/Stopped/Idle/g' $PRNTCONF | cat $PRNTCONF | sed 's/stop-printer/retry-job/' $PRINTCONF | cat $PRNTCONF | sed 's/OpPolicy default//' $PRINTCONF | cat $PRNTCONF | sed 's/Default//' $PRINTCONF`
 
 
 
@@ -50,7 +53,9 @@ CHKUSB=`dmesg | grep -m 1 sdb`
 #echo "What is the sharename?"
 #echo "Send test print?"
 
-
+##############################################################
+### checks that the printer name is not already being used ###
+##############################################################
 chkname () {
 	while true;
 do
@@ -67,8 +72,9 @@ do
 
 done
 }
-
-
+############################################################################
+### port scanner for port 515, 9100 and another for chosing another port ###
+###########################################################################
 scanprt () {
 	while true
 do
@@ -82,7 +88,7 @@ do
 	then
 		echo "Scanning for Windows printers. Please be patient: "
 		echo
-		nmap -v -p515 $IP | grep open -A1 -B4 | grep 'Nmap\|MAC' | paste -s -d",\n" | awk '{print $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15}'
+		nmap -p515 $IP | grep open -A1 -B4 | grep 'Nmap\|MAC' | paste -s -d",\n" | awk '{print $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15}'
 		echo
 		echo -n "Enter "q" to quit: "
 		read quit
@@ -91,7 +97,7 @@ do
 	then
 		echo "Scanning for Network printers. Please be patient; "
 		echo
-		nmap -v -p9100 $IP | grep open -A1 -B4 | grep 'Nmap\|MAC' | paste -s -d",\n" | awk '{print $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15}'
+		nmap -p9100 $IP | grep open -A1 -B4 | grep 'Nmap\|MAC' | paste -s -d",\n" | awk '{print $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15}'
 		echo
 		echo -n "Enter "q" to quit: "
 		read quit
@@ -102,7 +108,7 @@ do
 		echo
 		echo "Scanning for port $PORT and $IP. Please be patient"
 		echo	
-		nmap -v -p$PORT $IP | grep open -A1 -B4 | grep 'Nmap\|MAC' | paste -s -d",\n" | awk '{print $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15}'
+		nmap -p$PORT $IP | grep open -A1 -B4 | grep 'Nmap\|MAC' | paste -s -d",\n" | awk '{print $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15}'
 		echo "Enter "q" to quit: "
 		read quit
 		return
@@ -111,59 +117,49 @@ done
 }
 
 
-
-
+#############################################################
+### suppost to find usb printer and install on the server ###
+#############################################################
 usbprt () {
 i=0
-#dmesg -C
 #echo $DMESGBU
 echo $DMESGCLR
-#while [ $i -le 50000000 ]
+sleep 1
 while true;
 do
         echo $CHKUSB
-        if [ "$i" != 50000 -a "$?" == "0"  ]
+        if [ "$i" != 500000000 -a "$?" == "0"  ]
         then
                 echo "Printer $CHKUSB has been detected"
-                echo "$?"
-                sleep 1
+                echo $CHKUSB
+		sleep 1
                 chkname
-                break
                 echo "Installing $CHKUSB as $NAME"
-                lpadmin -p $NAME -v usb:/dev/usb/$CHKUSB -E
+                sleep 1
+		lpadmin -p $NAME -v usb:/dev/usb/$CHKUSB -E
                 echo "$NAME has been installed."
                 sleep 1
+		return
         else
                 echo "Printer not detected"
                 echo $CHKUSB
                 echo "$i"
                 ((i=i+1))
                 echo "$i"
-                sleep 1
         fi
 done
 }
 
-
-
+#######################################################
+### clear printer Stopped messages in printers.conf ###
+#######################################################
 clrprtstop () {
-	cat /etc/cups/printers.conf | grep Stopped -A1 
-
-
-
+	$MSGDEL
 }
 
-
-
-
-
-
-
-
-
-
-
-
+#################
+### main menu ###
+#################
 while true; do
 	clear
         echo
@@ -171,18 +167,19 @@ while true; do
         echo "# Printer Setup #"
         echo "#################"
         echo
-#        echo "s. Server"
 	echo "s. Scan for printers"
 	echo "i. Print server ip"
 	echo "w. Windows printer installation"
         echo "n. Network printer installation"
+	echo "u. USB server printer installation"
         echo "p. Print test page"
         echo "v. View installed printers"
 	echo "a. View if printer is accepting print jobs"
 	echo "j. View jobs not completed"
 	echo "r. Restart print service"
 	echo "c. Clear print queue" 
-        echo "u. Undo installed printer"
+	echo "t. Reset stopped printers"
+        echo "e. Revert installed printer"
 	echo "q. Quit"
         echo
         echo
@@ -191,6 +188,9 @@ while true; do
         echo
 
 
+#################
+### main body ###
+#################
 case $CHOICE in
         "s" | "S")
 		clear
@@ -219,7 +219,7 @@ case $CHOICE in
                 sleep 1
                 echo "Restarting cups"
                 echo $CUPS
-                sleep 2
+                sleep 1
                 ;;
         "n" | "N")
                 clear
@@ -231,6 +231,9 @@ case $CHOICE in
                 echo $CUPSBKUP
                 sleep 1
                 lpadmin -p "$NAME" -v socket://"$IP":9100 -E
+		;;
+	"u" | "U")
+		usbprt
 		;;
         "p" | "P")
 		echo -n "Enter printer name: "
@@ -267,7 +270,16 @@ case $CHOICE in
 		echo "Print queue cleared"
 		sleep 1
 		;;
-        "u" | "U")
+	"t" | "T")
+		clear
+		echo "Removing stopped messages"
+		$CUPSBKUP
+		$MSGDEL
+		$CUPS
+		echo "Stopped messages cleared"
+		sleep 1
+		;;
+        "e" | "E")
 		clear
 		echo "Reverting back"
                 echo $CUPSREVERT
