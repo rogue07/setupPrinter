@@ -2,7 +2,7 @@
 # ram
 # rogue7.ram@gmail.com
 # ver=0.5
-#setupPrinter.sh.dev17.0.3e
+# setup printer
 
 # jul 5, 2020 / 20:15
 
@@ -43,7 +43,7 @@ CUPS=`service cups restart`
 CUPSBKUP=`cp /etc/cups/printers.conf{,.setup}`
 CUPSREVERT=`cp /etc/cups/printers.conf.setup /etc/cups/printers.conf`
 PCONF="/etc/cups/printers.conf"
-SHOWIP=`ifconfig | grep 'eth0\|em1\|wlan0' -4 | grep inet | awk 'NR==1{print $2}'`
+SHOWIP=`ifconfig | grep 'eth0\|wlan0' -4 | grep inet | awk 'NR==1{print $2}'`
 CHKUSB=`dmesg | grep -m 1 Bidirectional | awk '{print $5}' | sed -e 's/://; s/usb//g'`
 DMESGBU=`yes | cp /var/log/dmesg /tmp/dmesg-old.setup`
 DMESGCLR=`dmesg -C`
