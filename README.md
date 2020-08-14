@@ -5,3 +5,4 @@
 4. Create a new printer. If the printer name is already being used it makes you try a different name.
 5. Show stopped jobs
 6. Clear stopped messages from printers.conf and restarts cups
+7. View installed printers
